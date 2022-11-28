@@ -115,26 +115,37 @@ public class MapperAnnotationBuilder {
   public void parse() {
     String resource = type.toString();
     if (!configuration.isResourceLoaded(resource)) {
+      //加载xml资源
       loadXmlResource();
+      //添加资源到configuration中
       configuration.addLoadedResource(resource);
+      //设置当前的namespace
       assistant.setCurrentNamespace(type.getName());
+      //解析缓存（类名上有CacheNamespace加入缓存）
       parseCache();
+      //解析缓存引用（类名上有CacheNamespaceRef注解）
       parseCacheRef();
       for (Method method : type.getMethods()) {
+        //判断方法是否是可能是statement（非桥接和非默认）
         if (!canHaveStatement(method)) {
           continue;
         }
+        //方法上有select注解，但是没有resultmap注解
         if (getAnnotationWrapper(method, false, Select.class, SelectProvider.class).isPresent()
             && method.getAnnotation(ResultMap.class) == null) {
+          //从slect的方法中解析resultmap，好像没用过这个玩法
           parseResultMap(method);
         }
         try {
+          //解析statement语句（核心）
           parseStatement(method);
         } catch (IncompleteElementException e) {
+          //如果解析statement报错了，就添加该方法到configuration中的incompleteMethods中
           configuration.addIncompleteMethod(new MethodResolver(this, method));
         }
       }
     }
+    //解析未实现的方法
     parsePendingMethods();
   }
 
@@ -175,6 +186,7 @@ public class MapperAnnotationBuilder {
         }
       }
       if (inputStream != null) {
+        //找到同名的xml并通过XMLMapperBuilder进行解析
         XMLMapperBuilder xmlParser = new XMLMapperBuilder(inputStream, assistant.getConfiguration(), xmlResource, configuration.getSqlFragments(), type.getName());
         xmlParser.parse();
       }
@@ -294,15 +306,24 @@ public class MapperAnnotationBuilder {
   }
 
   void parseStatement(Method method) {
+    //获取参数类型
     final Class<?> parameterTypeClass = getParameterType(method);
+    //通过策略获取驱动
     final LanguageDriver languageDriver = getLanguageDriver(method);
 
+    //获取注解包装类
     getAnnotationWrapper(method, true, statementAnnotationTypes).ifPresent(statementAnnotation -> {
+      //如果存在注解，就需要处理。解析相关参数，处理一些特殊逻辑，然后通过assistant去添加statement.最终是通过statementBuilder去创建
+      //buildSqlSource过程还有点复杂
       final SqlSource sqlSource = buildSqlSource(statementAnnotation.getAnnotation(), parameterTypeClass, languageDriver, method);
+      //获取sql类型，select，update之类的
       final SqlCommandType sqlCommandType = statementAnnotation.getSqlCommandType();
+      //是否有Options注解
       final Options options = getAnnotationWrapper(method, false, Options.class).map(x -> (Options)x.getAnnotation()).orElse(null);
+      //statementId是类名+方法名
       final String mappedStatementId = type.getName() + "." + method.getName();
 
+      //处理KeyGenerator
       final KeyGenerator keyGenerator;
       String keyProperty = null;
       String keyColumn = null;
@@ -313,6 +334,7 @@ public class MapperAnnotationBuilder {
           keyGenerator = handleSelectKeyAnnotation(selectKey, mappedStatementId, getParameterType(method), languageDriver);
           keyProperty = selectKey.keyProperty();
         } else if (options == null) {
+          //判断是否使用自增id
           keyGenerator = configuration.isUseGeneratedKeys() ? Jdbc3KeyGenerator.INSTANCE : NoKeyGenerator.INSTANCE;
         } else {
           keyGenerator = options.useGeneratedKeys() ? Jdbc3KeyGenerator.INSTANCE : NoKeyGenerator.INSTANCE;
@@ -323,6 +345,7 @@ public class MapperAnnotationBuilder {
         keyGenerator = NoKeyGenerator.INSTANCE;
       }
 
+      //处理options的一些参数
       Integer fetchSize = null;
       Integer timeout = null;
       StatementType statementType = StatementType.PREPARED;
@@ -345,6 +368,7 @@ public class MapperAnnotationBuilder {
         }
       }
 
+      //处理resultMapId
       String resultMapId = null;
       if (isSelect) {
         ResultMap resultMapAnnotation = method.getAnnotation(ResultMap.class);
@@ -355,6 +379,7 @@ public class MapperAnnotationBuilder {
         }
       }
 
+      //通过MapperBuilderAssistant去添加mappedStatement
       assistant.addMappedStatement(
           mappedStatementId,
           sqlSource,

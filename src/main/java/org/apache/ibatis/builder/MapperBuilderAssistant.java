@@ -267,8 +267,10 @@ public class MapperBuilderAssistant extends BaseBuilder {
       throw new IncompleteElementException("Cache-ref not yet resolved");
     }
 
+    //把id加在namespace后面
     id = applyCurrentNamespace(id, false);
 
+    //MappedStatement.Builder
     MappedStatement.Builder statementBuilder = new MappedStatement.Builder(configuration, id, sqlSource, sqlCommandType)
         .resource(resource)
         .fetchSize(fetchSize)
@@ -293,6 +295,7 @@ public class MapperBuilderAssistant extends BaseBuilder {
     }
 
     MappedStatement statement = statementBuilder.build();
+    //添加到configuration中
     configuration.addMappedStatement(statement);
     return statement;
   }

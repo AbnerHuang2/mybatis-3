@@ -91,12 +91,16 @@ public class XMLMapperBuilder extends BaseBuilder {
   }
 
   public void parse() {
+    //判断资源是否被加载
     if (!configuration.isResourceLoaded(resource)) {
+      //解析资源中的mapper节点
       configurationElement(parser.evalNode("/mapper"));
+      //添加资源
       configuration.addLoadedResource(resource);
+      //绑定到namespace,最终还是会通过configuration.addMapper()去添加mapper
       bindMapperForNamespace();
     }
-
+    //继续处理未完成的解析
     parsePendingResultMaps();
     parsePendingCacheRefs();
     parsePendingStatements();
@@ -117,6 +121,7 @@ public class XMLMapperBuilder extends BaseBuilder {
       cacheElement(context.evalNode("cache"));
       parameterMapElement(context.evalNodes("/mapper/parameterMap"));
       resultMapElements(context.evalNodes("/mapper/resultMap"));
+      //解析sql
       sqlElement(context.evalNodes("/mapper/sql"));
       buildStatementFromContext(context.evalNodes("select|insert|update|delete"));
     } catch (Exception e) {
