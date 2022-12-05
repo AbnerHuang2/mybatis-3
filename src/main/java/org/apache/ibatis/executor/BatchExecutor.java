@@ -85,10 +85,15 @@ public class BatchExecutor extends BaseExecutor {
     try {
       flushStatements();
       Configuration configuration = ms.getConfiguration();
+      //从config创建一个statement处理器
       StatementHandler handler = configuration.newStatementHandler(wrapper, ms, parameterObject, rowBounds, resultHandler, boundSql);
+      //获取数据连接
       Connection connection = getConnection(ms.getStatementLog());
+      //获取Statement
       stmt = handler.prepare(connection, transaction.getTimeout());
+      //设置相关参数
       handler.parameterize(stmt);
+      //最终执行，然后通过resultHandler处理结果
       return handler.query(stmt, resultHandler);
     } finally {
       closeStatement(stmt);

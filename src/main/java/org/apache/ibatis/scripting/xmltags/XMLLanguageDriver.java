@@ -46,11 +46,13 @@ public class XMLLanguageDriver implements LanguageDriver {
 
   @Override
   public SqlSource createSqlSource(Configuration configuration, String script, Class<?> parameterType) {
+    //如果是<script>开头，通过xml方式解析
     // issue #3
     if (script.startsWith("<script>")) {
       XPathParser parser = new XPathParser(script, false, configuration.getVariables(), new XMLMapperEntityResolver());
       return createSqlSource(configuration, parser.evalNode("/script"), parameterType);
     } else {
+      //否则通过PropertyParser解析
       // issue #127
       script = PropertyParser.parse(script, configuration.getVariables());
       TextSqlNode textSqlNode = new TextSqlNode(script);

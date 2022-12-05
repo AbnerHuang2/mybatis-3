@@ -148,16 +148,21 @@ public class Configuration {
    * @see <a href='https://github.com/mybatis/old-google-code-issues/issues/300'>Issue 300 (google code)</a>
    */
   protected Class<?> configurationFactory;
-
+  //mapper注册器，所有的mapper都会通过mapperRegistry注册这里
   protected final MapperRegistry mapperRegistry = new MapperRegistry(this);
+  //过滤器链，所有的过滤器都会被注册到这里
   protected final InterceptorChain interceptorChain = new InterceptorChain();
+  //类型处理器注册器
   protected final TypeHandlerRegistry typeHandlerRegistry = new TypeHandlerRegistry(this);
+  //类型别名注册器
   protected final TypeAliasRegistry typeAliasRegistry = new TypeAliasRegistry();
+  //驱动注册器
   protected final LanguageDriverRegistry languageRegistry = new LanguageDriverRegistry();
-
+  //mappedStatements，所有的sql语句都会解析到这里
   protected final Map<String, MappedStatement> mappedStatements = new StrictMap<MappedStatement>("Mapped Statements collection")
       .conflictMessageProducer((savedValue, targetValue) ->
           ". please check " + savedValue.getResource() + " and " + targetValue.getResource());
+  //缓存map
   protected final Map<String, Cache> caches = new StrictMap<>("Caches collection");
   //所有的resultMap都会被解析到这里
   protected final Map<String, ResultMap> resultMaps = new StrictMap<>("Result Maps collection");

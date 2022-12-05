@@ -413,6 +413,7 @@ public class MapperAnnotationBuilder {
     if (lang != null) {
       langClass = lang.value();
     }
+    //通过configuration获取驱动，默认会注入一个xml驱动
     return configuration.getLanguageDriver(langClass);
   }
 
@@ -641,6 +642,7 @@ public class MapperAnnotationBuilder {
 
   private SqlSource buildSqlSource(Annotation annotation, Class<?> parameterType, LanguageDriver languageDriver,
       Method method) {
+    //判断注解类型，通过languageDriver去创建SqlSource
     if (annotation instanceof Select) {
       return buildSqlSourceFromStrings(((Select) annotation).value(), parameterType, languageDriver);
     } else if (annotation instanceof Update) {
@@ -652,6 +654,7 @@ public class MapperAnnotationBuilder {
     } else if (annotation instanceof SelectKey) {
       return buildSqlSourceFromStrings(((SelectKey) annotation).statement(), parameterType, languageDriver);
     }
+    //没有匹配的注解，就通过默认的ProviderSqlSource去创建SqlSource
     return new ProviderSqlSource(assistant.getConfiguration(), annotation, type, method);
   }
 
